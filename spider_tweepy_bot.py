@@ -7,6 +7,7 @@ import json
 from bs4 import BeautifulSoup
 import datetime
 from pymongo import MongoClient
+
 client = MongoClient()
 db = client['twitter']
 tweets = db['tweets']
@@ -21,7 +22,7 @@ class StdOutListener(StreamListener):
 
     def on_data(self, data):
         data = json.loads(data)
-        sorgenti = ['http://twitter.com/download/iphone',
+        sources = ['http://twitter.com/download/iphone',
                     'http://twitter.com/#!/download/ipad',
                     'http://twitter.com',
                     'http://twitter.com/download/android',
@@ -29,12 +30,12 @@ class StdOutListener(StreamListener):
                     'https://mobile.twitter.com',
                     'https://about.twitter.com/products/tweetdeck']
 
-        if 'limit' not in data.keys() and data['user']['lang'] == 'it':
-            sorgente_html = BeautifulSoup(data['source'], "lxml")
-            sorgente = sorgente_html.find('a')['href']
-            if sorgente not in sorgenti:
-                print(sorgente)
-                elementi = ['followers_count',
+        if 'limit' not in data.keys() and data['user']['lang'] == 'it': #Filtering Italian tweets, change the 'it', with what you need
+            source_html = BeautifulSoup(data['source'], "lxml")
+            source = source_html.find('a')['href']
+            if source not in sources: #filtering the known providers
+                print(source)
+                elements = ['followers_count',
                 'statuses_count',
                 'profile_image_url_https',
                 'geo_enabled',
@@ -46,11 +47,11 @@ class StdOutListener(StreamListener):
                 'lang',
                 'verified']
                 post = { "date": datetime.datetime.utcnow()}
-                for elemento in elementi:
-                    post[elemento] = data['user'][elemento]
-                post_id = tweets.insert_one(post).inserted_id
+                for element in elements:
+                    post[element] = data['user'][element]
+                post_id = tweets.insert_one(post).inserted_id #Storing each elememt
                 print(post_id)
-        elif 'limit' in data.keys():
+        elif 'limit' in data.keys(): #avoid interruption during the scanning. If you have many spiders set a sleep time
             print(data)
         return True
 
